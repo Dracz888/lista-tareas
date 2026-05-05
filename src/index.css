@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@400;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red:          #D32F2F;
+  --red-dark:     #b71c1c;
+  --bg:           #0a0a0a;
+  --bg2:          #111111;
+  --bg3:          #181818;
+  --border:       #222222;
+  --border2:      #2e2e2e;
+  --gray:         #5a5a5a;
+  --gray2:        #888888;
+  --text:         #e8e8e8;
+  --text-dim:     #aaaaaa;
+  --shadow:       rgba(0,0,0,0.5);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Barlow', sans-serif;
+  --font-cond:    'Barlow Condensed', sans-serif;
+}
+
+body.light {
+  --bg:      #f4f4f5;
+  --bg2:     #ffffff;
+  --bg3:     #f0f0f1;
+  --border:  #e2e2e4;
+  --border2: #d0d0d4;
+  --gray:    #9a9aaa;
+  --gray2:   #666678;
+  --text:    #111118;
+  --text-dim:#444455;
+  --shadow:  rgba(0,0,0,0.12);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.25s, color 0.25s;
+}
+
+#root { min-height: 100vh; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes fadeUp    { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pulse     { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+input::placeholder, textarea::placeholder { color: var(--border2); }
+select { appearance: none; }
+button { font-family: var(--font-body); }
+
+@media (max-width: 640px) {
+  .desktop-nav { display: none !important; }
+  .mobile-bottom-nav { display: flex !important; }
+}
+.mobile-bottom-nav { display: none; }
