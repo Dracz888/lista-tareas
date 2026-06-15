@@ -3,8 +3,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --red:          #D32F2F;
-  --red-dark:     #b71c1c;
+  --gold:         #C9A227;
+  --gold-dark:    #a07d12;
+  --red:          #C9A227;  /* acento principal = dorado (compatibilidad) */
+  --red-dark:     #a07d12;
   --bg:           #0a0a0a;
   --bg2:          #111111;
   --bg3:          #181818;

@@ -1,16 +1,60 @@
-# React + Vite
+# Dorado Club — Sistema de Gestión
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web (instalable en computadora o celular como PWA) para la gestión
+empresarial de **Dorado Club**. Esta primera fase entrega el **inicio de sesión**
+y el **papel de acceso** (control de roles por cargo).
 
-Currently, two official plugins are available:
+## Estado actual (Fase 1)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Inicio de sesión** por usuario y contraseña, por cargo.
+- **Papel de acceso / cargos**: los 10 cargos de la empresa, cada uno asociado a
+  un departamento y con sus permisos de gestión.
+- **Administración de perfiles y cargos**: solo el **Gerente General** y el
+  **Súper Intendente** pueden crear cargos y perfiles (usuario/contraseña). El
+  personal **no** puede registrarse por su cuenta.
+- **Auditoría**: registro de actividad (inicios de sesión, creación/edición de perfiles).
+- **Inicio y Gestión**: cada cargo ve los módulos de su gerencia. Los módulos de
+  registro financiero se muestran como *Próximamente* (próximas fases).
 
-## React Compiler
+## Cargos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Gerente General · Súper Intendente · Gerente Administrativo · Gerente de Mercadeo ·
+Gerente de RRHH · Gerente Inmobiliaria · Gerente de Condominio · Gerente de Komplex Gym ·
+Gerente de DFC · Gerente de Sport Bar.
 
-## Expanding the ESLint configuration
+> Solo **Gerente General** y **Súper Intendente** pueden gestionar usuarios y cargos.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Métodos de pago (base común de compra/venta)
+
+Pago Móvil (Bs) · Zelle (USD, tasa 1) · Dólares (USD, tasa 1) · Bancolombia (COP) · COP.
+El monto en USD se calcula dividiendo el monto entre la tasa; si el método es en
+dólares, la tasa es siempre 1.
+
+## Credenciales de prueba
+
+Todos los perfiles iniciales usan la contraseña `dorado2026`:
+
+| Cargo                  | Usuario             |
+|------------------------|---------------------|
+| Gerente General        | `gerencia.general`  |
+| Súper Intendente       | `superintendente`   |
+| Gerente Administrativo | `administracion`    |
+| Gerente de Mercadeo    | `mercadeo`          |
+| Gerente de RRHH        | `rrhh`              |
+| Gerente Inmobiliaria   | `inmobiliaria`      |
+| Gerente de Condominio  | `condominio`        |
+| Gerente de Komplex Gym | `komplexgym`        |
+| Gerente de DFC         | `dfc`               |
+| Gerente de Sport Bar   | `sportbar`          |
+
+> Los datos se guardan en `sessionStorage` (demo). En fases siguientes se conectará
+> un backend con base de datos para persistencia real y registro de ingresos/egresos.
+
+## Desarrollo
+
+```bash
+npm install
+npm run dev      # entorno de desarrollo
+npm run build    # build de producción
+npm run lint     # análisis de código
+```

@@ -7,12 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo-k.jpg', 'logo-dark.jpg', 'logo-light.jpg'],
       manifest: {
-        name: 'Komplex GYM — Sistema Interno',
-        short_name: 'Komplex GYM',
-        description: 'Sistema interno de gestión para Komplex GYM',
-        theme_color: '#D32F2F',
+        name: 'Dorado Club — Sistema de Gestión',
+        short_name: 'Dorado Club',
+        description: 'Sistema de gestión empresarial para Dorado Club: gerencias, ingresos y egresos.',
+        theme_color: '#C9A227',
         background_color: '#0a0a0a',
         display: 'standalone',
         orientation: 'portrait',
