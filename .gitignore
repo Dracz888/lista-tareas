@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-escritorio
 dist-ssr
 .DS_Store
 .env
