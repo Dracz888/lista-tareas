@@ -2,7 +2,7 @@ name: Desplegar a GitHub Pages
 
 on:
   push:
-    branches: [claude/mobile-finance-app-o8tz4o]
+    branches: [main, claude/mobile-finance-app-o8tz4o]
   workflow_dispatch:
 
 permissions:
