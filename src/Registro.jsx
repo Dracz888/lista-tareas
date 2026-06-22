@@ -1,29 +1,30 @@
 import { useMemo, useState } from 'react';
 import {
-  METHOD_LIST, METHODS, TYPES, uid, todayISO, toUSD, fmt, fmtUSD,
+  TYPES, uid, todayISO, toUSD, fmt, fmtUSD, findMethod,
 } from './finance.js';
 import { Icon } from './ui.jsx';
 
-export default function Registro({ categories, records, setRecords }) {
+export default function Registro({ categories, records, setRecords, methods }) {
   const [date, setDate] = useState(todayISO());
   const [categoryId, setCategoryId] = useState('');
-  const [method, setMethod] = useState('usd');
+  const [method, setMethod] = useState(methods[0]?.id || '');
   const [monto, setMonto] = useState('');
   const [tasa, setTasa] = useState('');
+  const [nota, setNota] = useState('');
   const [flash, setFlash] = useState(false);
 
-  const meth = METHODS[method];
-  const isFixed = meth.fixedRate === 1;
+  const meth = findMethod(methods, method);
+  const isFixed = meth?.fixedRate === 1;
   const effRate = isFixed ? 1 : Number(tasa) || 0;
   const montoNum = Number(monto) || 0;
   const montoUSD = useMemo(
-    () => toUSD(montoNum, effRate, method),
-    [montoNum, effRate, method]
+    () => toUSD(montoNum, effRate, method, methods),
+    [montoNum, effRate, method, methods]
   );
 
   const cat = categories.find((c) => c.id === categoryId);
   const canSave =
-    cat && montoNum > 0 && (isFixed || effRate > 0) && date;
+    cat && meth && montoNum > 0 && (isFixed || effRate > 0) && date;
 
   const save = (e) => {
     e.preventDefault();
@@ -38,12 +39,14 @@ export default function Registro({ categories, records, setRecords }) {
       monto: montoNum,
       tasa: isFixed ? 1 : effRate,
       montoUSD,
+      nota: nota.trim(),
       createdAt: Date.now(),
     };
     setRecords([rec, ...records]);
     // Reset suave: conserva fecha, método y tasa para registros consecutivos
     setMonto('');
     setCategoryId('');
+    setNota('');
     setFlash(true);
     setTimeout(() => setFlash(false), 1400);
   };
@@ -88,42 +91,59 @@ export default function Registro({ categories, records, setRecords }) {
 
           <label className="field">
             <span>Método de pago</span>
-            <div className="method-grid">
-              {METHOD_LIST.map((m) => (
-                <button
-                  type="button"
-                  key={m.id}
-                  className={`method-chip ${method === m.id ? 'active' : ''}`}
-                  onClick={() => setMethod(m.id)}
-                >
-                  <strong>{m.label}</strong>
-                  <small>{m.note}</small>
-                </button>
-              ))}
-            </div>
+            {methods.length === 0 ? (
+              <p className="hint warn">Crea métodos de pago en la pestaña Configuración.</p>
+            ) : (
+              <div className="method-grid">
+                {methods.map((m) => (
+                  <button
+                    type="button"
+                    key={m.id}
+                    className={`method-chip ${method === m.id ? 'active' : ''}`}
+                    onClick={() => setMethod(m.id)}
+                  >
+                    <strong>{m.label}</strong>
+                    <small>{m.note}</small>
+                  </button>
+                ))}
+              </div>
+            )}
           </label>
 
-          <div className="field-row">
-            <label className="field">
-              <span>Monto ({meth.short})</span>
-              <input
-                type="number" inputMode="decimal" min="0" step="any"
-                value={monto} onChange={(e) => setMonto(e.target.value)}
-                placeholder="0.00"
-              />
-            </label>
+          {meth && (
+            <div className="field-row">
+              <label className="field">
+                <span>Monto ({meth.short})</span>
+                <input
+                  type="number" inputMode="decimal" min="0" step="any"
+                  value={monto} onChange={(e) => setMonto(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
 
-            <label className="field">
-              <span>Tasa</span>
-              <input
-                type="number" inputMode="decimal" min="0" step="any"
-                value={isFixed ? 1 : tasa}
-                onChange={(e) => setTasa(e.target.value)}
-                placeholder={isFixed ? '1' : `${meth.short} por USD`}
-                disabled={isFixed}
-              />
-            </label>
-          </div>
+              <label className="field">
+                <span>Tasa</span>
+                <input
+                  type="number" inputMode="decimal" min="0" step="any"
+                  value={isFixed ? 1 : tasa}
+                  onChange={(e) => setTasa(e.target.value)}
+                  placeholder={isFixed ? '1' : `${meth.short} por USD`}
+                  disabled={isFixed}
+                />
+              </label>
+            </div>
+          )}
+
+          <label className="field">
+            <span>Nota (opcional)</span>
+            <input
+              type="text"
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              placeholder="Ej. Pago de Juan, compra del mercado…"
+              maxLength={140}
+            />
+          </label>
 
           <div className="usd-preview">
             <span>Monto en USD</span>
@@ -145,7 +165,7 @@ export default function Registro({ categories, records, setRecords }) {
           <ul className="rec-list">
             {recent.map((r) => {
               const t = TYPES[r.type];
-              const m = METHODS[r.method];
+              const m = findMethod(methods, r.method);
               return (
                 <li key={r.id} className="rec-item">
                   <span className="rec-bar" style={{ background: t.color }} />
@@ -158,8 +178,11 @@ export default function Registro({ categories, records, setRecords }) {
                     </div>
                     <div className="rec-sub">
                       <span>{r.date}</span>
-                      <span className="rec-method">{m.label} · {m.symbol}{fmt(r.monto, m.currency)}</span>
+                      <span className="rec-method">
+                        {m ? `${m.label} · ${m.symbol}${fmt(r.monto, m.currency)}` : 'Método eliminado'}
+                      </span>
                     </div>
+                    {r.nota && <p className="rec-note">{r.nota}</p>}
                   </div>
                   <button
                     className="icon-btn danger"

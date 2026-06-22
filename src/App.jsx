@@ -16,9 +16,11 @@ export default function App() {
   const [theme, setTheme] = useState(() => store.loadTheme());
   const [categories, setCategories] = useState(() => store.loadCategories());
   const [records, setRecords] = useState(() => store.loadRecords());
+  const [methods, setMethods] = useState(() => store.loadMethods());
 
   useEffect(() => { store.saveCategories(categories); }, [categories]);
   useEffect(() => { store.saveRecords(records); }, [records]);
+  useEffect(() => { store.saveMethods(methods); }, [methods]);
   useEffect(() => {
     store.saveTheme(theme);
     document.body.classList.toggle('light', theme === 'light');
@@ -42,11 +44,14 @@ export default function App() {
 
       <main className="content">
         {tab === 'registro' && (
-          <Registro categories={categories} records={records} setRecords={setRecords} />
+          <Registro categories={categories} records={records} setRecords={setRecords} methods={methods} />
         )}
-        {tab === 'gestion' && <Gestion records={records} />}
+        {tab === 'gestion' && <Gestion records={records} methods={methods} />}
         {tab === 'config' && (
-          <Configuracion categories={categories} setCategories={setCategories} records={records} />
+          <Configuracion
+            categories={categories} setCategories={setCategories}
+            records={records} methods={methods} setMethods={setMethods}
+          />
         )}
       </main>
 

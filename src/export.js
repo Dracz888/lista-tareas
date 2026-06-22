@@ -5,7 +5,7 @@
 //  sin compresión) para no añadir dependencias externas. Produce un
 //  archivo Excel nativo que abre sin advertencias de formato.
 
-import { TYPES, METHODS, todayISO } from './finance.js';
+import { TYPES, findMethod, todayISO } from './finance.js';
 
 // --- Descarga de un Blob como archivo -------------------------------------
 function downloadBlob(blob, filename) {
@@ -23,14 +23,15 @@ function downloadBlob(blob, filename) {
 // ============================================================
 //  Copia de seguridad en JSON (para migrar a otra app)
 // ============================================================
-export function exportJSON(records, categories) {
+export function exportJSON(records, categories, methods) {
   const payload = {
     app: 'Finanzas',
     schema: 'finanzas.backup',
     version: 1,
     exportedAt: new Date().toISOString(),
-    counts: { records: records.length, categories: categories.length },
+    counts: { records: records.length, categories: categories.length, methods: methods.length },
     categories,
+    methods,
     records,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -51,18 +52,20 @@ const COLUMNS = [
   { header: 'Monto',          key: 'monto',        kind: 'number', width: 14 },
   { header: 'Tasa',           key: 'tasa',         kind: 'number', width: 14 },
   { header: 'Monto USD',      key: 'montoUSD',     kind: 'number', width: 14 },
+  { header: 'Nota',           key: 'nota',         kind: 'text',   width: 28 },
 ];
 
 // Convierte un registro en una fila de valores listos para la hoja
-function rowFromRecord(r) {
+function rowFromRecord(r, methods) {
   return {
     date: r.date || '',
     categoryName: r.categoryName || 'Sin categoría',
     type: TYPES[r.type]?.label || r.type || '',
-    method: METHODS[r.method]?.label || r.method || '',
+    method: findMethod(methods, r.method)?.label || r.method || '',
     monto: Number(r.monto) || 0,
     tasa: Number(r.tasa) || 0,
     montoUSD: Math.round((Number(r.montoUSD) || 0) * 100) / 100,
+    nota: r.nota || '',
   };
 }
 
@@ -83,7 +86,7 @@ function cellXml(col, rowNum, value, kind) {
   return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
 }
 
-function sheetXml(records) {
+function sheetXml(records, methods) {
   const rows = [];
 
   // Encabezado
@@ -95,7 +98,7 @@ function sheetXml(records) {
   // Datos
   records.forEach((r, idx) => {
     const rowNum = idx + 2;
-    const data = rowFromRecord(r);
+    const data = rowFromRecord(r, methods);
     const cells = COLUMNS.map((c, i) =>
       cellXml(colLetter(i), rowNum, data[c.key], c.kind)
     ).join('');
@@ -231,13 +234,13 @@ function zipStore(files) {
   });
 }
 
-export function exportXLSX(records) {
+export function exportXLSX(records, methods) {
   const files = [
     { name: '[Content_Types].xml', content: FILE_CONTENT_TYPES },
     { name: '_rels/.rels', content: FILE_RELS },
     { name: 'xl/workbook.xml', content: FILE_WORKBOOK },
     { name: 'xl/_rels/workbook.xml.rels', content: FILE_WORKBOOK_RELS },
-    { name: 'xl/worksheets/sheet1.xml', content: sheetXml(records) },
+    { name: 'xl/worksheets/sheet1.xml', content: sheetXml(records, methods) },
   ];
   const blob = zipStore(files);
   downloadBlob(blob, `finanzas-registros-${todayISO()}.xlsx`);

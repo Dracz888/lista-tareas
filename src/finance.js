@@ -14,14 +14,17 @@ export const TYPE_LIST = Object.values(TYPES);
 // Cada método tiene su moneda nativa. Dólares y USDT son USD (tasa fija 1).
 // Cop (efectivo) y Bancolombia (banco) son ambos pesos colombianos pero se
 // rastrean por separado porque viven en lugares distintos.
-export const METHODS = {
-  usd:         { id: 'usd',         label: 'Dólares',     short: 'USD',  currency: 'USD', symbol: '$',   fixedRate: 1, note: 'Efectivo' },
-  usdt:        { id: 'usdt',        label: 'USDT',        short: 'USDT', currency: 'USD', symbol: '₮',   fixedRate: 1, note: 'Cripto' },
-  bs:          { id: 'bs',          label: 'Bs',          short: 'Bs',   currency: 'VES', symbol: 'Bs',  fixedRate: null, note: 'Bolívares' },
-  cop:         { id: 'cop',         label: 'Cop',         short: 'COP',  currency: 'COP', symbol: '$',   fixedRate: null, note: 'Efectivo' },
-  bancolombia: { id: 'bancolombia', label: 'Bancolombia', short: 'Banco',currency: 'COP', symbol: '$',   fixedRate: null, note: 'Banco' },
-};
-export const METHOD_LIST = Object.values(METHODS);
+// Los métodos son editables desde Configuración; esta lista es solo la
+// semilla inicial con la que arranca una instalación nueva.
+const SEED_METHODS = [
+  { id: 'usd',         label: 'Dólares',     short: 'USD',  currency: 'USD', symbol: '$',   fixedRate: 1, note: 'Efectivo' },
+  { id: 'usdt',        label: 'USDT',        short: 'USDT', currency: 'USD', symbol: '₮',   fixedRate: 1, note: 'Cripto' },
+  { id: 'bs',          label: 'Bs',          short: 'Bs',   currency: 'VES', symbol: 'Bs',  fixedRate: null, note: 'Bolívares' },
+  { id: 'cop',         label: 'Cop',         short: 'COP',  currency: 'COP', symbol: '$',   fixedRate: null, note: 'Efectivo' },
+  { id: 'bancolombia', label: 'Bancolombia', short: 'Banco',currency: 'COP', symbol: '$',   fixedRate: null, note: 'Banco' },
+];
+
+export const findMethod = (methods, id) => methods.find((m) => m.id === id);
 
 // --- Categorías de ejemplo (semilla inicial) ------------------------------
 const SEED_CATEGORIES = [
@@ -38,6 +41,7 @@ const KEYS = {
   categories: 'fin.categories',
   records:    'fin.records',
   theme:      'fin.theme',
+  methods:    'fin.methods',
 };
 
 function read(key, fallback) {
@@ -64,6 +68,13 @@ export const store = {
   saveRecords:    (r) => write(KEYS.records, r),
   loadTheme:      () => read(KEYS.theme, 'dark'),
   saveTheme:      (t) => write(KEYS.theme, t),
+  loadMethods:    () => {
+    const existing = read(KEYS.methods, null);
+    if (existing) return existing;
+    write(KEYS.methods, SEED_METHODS);
+    return SEED_METHODS;
+  },
+  saveMethods:    (m) => write(KEYS.methods, m),
 };
 
 // --- Utilidades -----------------------------------------------------------
@@ -77,8 +88,8 @@ export const todayISO = () => {
 };
 
 // Monto en USD a partir del monto local y la tasa (unidades locales por 1 USD)
-export const toUSD = (monto, tasa, methodId) => {
-  const m = METHODS[methodId];
+export const toUSD = (monto, tasa, methodId, methods) => {
+  const m = findMethod(methods, methodId);
   if (m && m.fixedRate === 1) return monto;
   const t = Number(tasa);
   if (!t || t <= 0) return 0;
@@ -114,20 +125,32 @@ export function monthLabel(key) {
 //  Agregaciones para la pestaña de Gestión
 // ============================================================
 
-// Filtra registros por periodo: 'all' | 'thisMonth' | 'lastMonth' | 'YYYY-MM'
+// Filtra registros por periodo:
+//   'all' | 'thisMonth' | 'lastMonth' | 'YYYY-MM' (mes concreto) |
+//   'YYYY' (año completo) | 'm-MM' (ese mes en cualquier año)
 export function filterByPeriod(records, period) {
-  if (period === 'all') return records;
+  if (!period || period === 'all') return records;
   const now = new Date();
-  let key;
   if (period === 'thisMonth') {
-    key = todayISO().slice(0, 7);
-  } else if (period === 'lastMonth') {
-    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  } else {
-    key = period; // YYYY-MM concreto
+    const key = todayISO().slice(0, 7);
+    return records.filter((r) => monthKey(r.date) === key);
   }
-  return records.filter((r) => monthKey(r.date) === key);
+  if (period === 'lastMonth') {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return records.filter((r) => monthKey(r.date) === key);
+  }
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    return records.filter((r) => monthKey(r.date) === period);
+  }
+  if (/^\d{4}$/.test(period)) {
+    return records.filter((r) => monthKey(r.date).slice(0, 4) === period);
+  }
+  if (/^m-\d{2}$/.test(period)) {
+    const mm = period.slice(2);
+    return records.filter((r) => monthKey(r.date).slice(5, 7) === mm);
+  }
+  return records;
 }
 
 // Totales por tipo (en USD)
@@ -141,15 +164,15 @@ export function totalsByType(records) {
 }
 
 // Disponible por método de pago (en su moneda nativa)
-export function balancesByMethod(records) {
+export function balancesByMethod(records, methods) {
   const map = {};
-  for (const m of METHOD_LIST) map[m.id] = 0;
+  for (const m of methods) map[m.id] = 0;
   for (const r of records) {
     const sign = TYPES[r.type]?.sign ?? 0;
     if (map[r.method] === undefined) map[r.method] = 0;
     map[r.method] += sign * (Number(r.monto) || 0);
   }
-  return METHOD_LIST.map((m) => ({ ...m, balance: map[m.id] || 0 }));
+  return methods.map((m) => ({ ...m, balance: map[m.id] || 0 }));
 }
 
 // Disponible total en USD (suma de saldos convertidos)

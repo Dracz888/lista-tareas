@@ -6,19 +6,35 @@ import {
 } from './finance.js';
 import { Icon, BarCompare, Donut, ColumnChart } from './ui.jsx';
 
-export default function Gestion({ records }) {
+const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+export default function Gestion({ records, methods }) {
   const [period, setPeriod] = useState('all');
 
-  // Meses disponibles para el filtro
-  const months = useMemo(() => {
-    const set = new Set(records.map((r) => monthKey(r.date)).filter(Boolean));
+  // Años disponibles para el filtro
+  const years = useMemo(() => {
+    const set = new Set(records.map((r) => monthKey(r.date).slice(0, 4)).filter(Boolean));
     return [...set].sort((a, b) => b.localeCompare(a));
   }, [records]);
+
+  // Mes y año actualmente seleccionados (derivados del periodo activo)
+  const monthYearMatch = /^(\d{4})-(\d{2})$/.exec(period);
+  const yearOnlyMatch = /^(\d{4})$/.exec(period);
+  const monthOnlyMatch = /^m-(\d{2})$/.exec(period);
+  const selYear = monthYearMatch?.[1] ?? yearOnlyMatch?.[1] ?? '';
+  const selMonth = monthYearMatch?.[2] ?? monthOnlyMatch?.[1] ?? '';
+
+  const applyMonthYear = (month, year) => {
+    if (month && year) setPeriod(`${year}-${month}`);
+    else if (year) setPeriod(year);
+    else if (month) setPeriod(`m-${month}`);
+    else setPeriod('all');
+  };
 
   const filtered = useMemo(() => filterByPeriod(records, period), [records, period]);
 
   const totals = useMemo(() => totalsByType(filtered), [filtered]);
-  const balances = useMemo(() => balancesByMethod(filtered), [filtered]);
+  const balances = useMemo(() => balancesByMethod(filtered, methods), [filtered, methods]);
   const netUSD = useMemo(() => netByMethodUSD(filtered), [filtered]);
   const outflow = useMemo(() => outflowByCategory(filtered), [filtered]);
   const series = useMemo(
@@ -56,13 +72,25 @@ export default function Gestion({ records }) {
         <button className={period === 'all' ? 'active' : ''} onClick={() => setPeriod('all')}>Todo</button>
         <button className={period === 'thisMonth' ? 'active' : ''} onClick={() => setPeriod('thisMonth')}>Este mes</button>
         <button className={period === 'lastMonth' ? 'active' : ''} onClick={() => setPeriod('lastMonth')}>Mes ant.</button>
+      </div>
+      <div className="period-bar">
         <select
-          className={months.includes(period) ? 'active' : ''}
-          value={months.includes(period) ? period : ''}
-          onChange={(e) => e.target.value && setPeriod(e.target.value)}
+          className={selMonth ? 'active' : ''}
+          value={selMonth}
+          onChange={(e) => applyMonthYear(e.target.value, selYear)}
         >
           <option value="">Mes…</option>
-          {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          {MONTH_NAMES.map((name, i) => (
+            <option key={name} value={String(i + 1).padStart(2, '0')}>{name}</option>
+          ))}
+        </select>
+        <select
+          className={selYear ? 'active' : ''}
+          value={selYear}
+          onChange={(e) => applyMonthYear(selMonth, e.target.value)}
+        >
+          <option value="">Año…</option>
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
 
