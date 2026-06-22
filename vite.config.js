@@ -12,7 +12,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Finanzas — Mis finanzas personales',
+        name: 'Finanzas',
         short_name: 'Finanzas',
         description: 'App personal para registrar y gestionar mis finanzas',
         theme_color: '#0b0d12',
