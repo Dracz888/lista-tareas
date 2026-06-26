@@ -33,24 +33,28 @@ const SEED_METHODS = [
 
 export const findMethod = (methods, id) => methods.find((m) => m.id === id);
 
-// --- Migración: categorías "Préstamo +/−" antiguas ------------------------
+// --- Migración: categorías de préstamos/deudas creadas como Ingreso/Egreso/Gasto -----
 // Antes de existir los tipos dedicados prestamo_in/prestamo_out, algunos
-// usuarios crearon categorías llamadas "Préstamo +" / "Préstamo −" como
-// Ingreso/Egreso comunes. Esto las reasigna al tipo de préstamo correcto y
-// actualiza los registros existentes que las usaban.
-const LEGACY_PRESTAMO_NAME = /^pr[eé]stamo\b/i;
+// usuarios crearon categorías como "Préstamo +/−", "Papá", "Mamá" o "Deuda …"
+// usando los tipos comunes Ingreso/Egreso/Gasto. Esto las reasigna al tipo de
+// préstamo correcto (para que dejen de sumarse al Resultado Neto) y actualiza
+// los registros existentes que las usaban.
+const LOAN_LIKE_NAME = /^(pr[eé]stamo|deudas?|debo|debe|fiado|mam[áa]|pap[áa])(?![a-záéíóúñ])/i;
 
 export function migrateLegacyPrestamoCategories(categories, records) {
   const idToNewType = {};
   const newCategories = categories.map((c) => {
-    if ((c.type !== 'ingreso' && c.type !== 'egreso') || !LEGACY_PRESTAMO_NAME.test(c.name)) {
+    if (!PRINCIPAL_TYPES.includes(c.type) || !LOAN_LIKE_NAME.test(c.name)) {
       return c;
     }
-    const isPlus = c.name.includes('+');
-    const isMinus = /[-−]/.test(c.name);
+    // Las categorías literalmente llamadas "Préstamo +/−" solo migran si el
+    // signo del nombre coincide con el tipo (evita reasignar casos contradictorios).
+    const isPrestamoLabel = /^pr[eé]stamo\b/i.test(c.name);
+    const hasPlus = c.name.includes('+');
+    const hasMinus = /[-−]/.test(c.name);
     const newType =
-      (c.type === 'ingreso' && isPlus && 'prestamo_in') ||
-      (c.type === 'egreso' && isMinus && 'prestamo_out') ||
+      (c.type === 'ingreso' && (!isPrestamoLabel || hasPlus) && 'prestamo_in') ||
+      ((c.type === 'egreso' || c.type === 'gasto') && (!isPrestamoLabel || hasMinus) && 'prestamo_out') ||
       null;
     if (!newType) return c;
     idToNewType[c.id] = newType;

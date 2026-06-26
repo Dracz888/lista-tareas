@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  TYPES, TYPE_LIST, toUSD, fmt, fmtUSD, findMethod,
+  TYPES, TYPE_LIST, PRINCIPAL_TYPES, PRESTAMO_TYPES, toUSD, fmt, fmtUSD, findMethod,
 } from './finance.js';
 import { Icon } from './ui.jsx';
 
@@ -109,7 +109,18 @@ export default function Historial({ categories, records, setRecords, methods }) 
             <button className={typeFilter === 'all' ? 'active' : ''} onClick={() => setTypeFilter('all')}>
               Todos
             </button>
-            {TYPE_LIST.map((t) => (
+            {TYPE_LIST.filter((t) => PRINCIPAL_TYPES.includes(t.id)).map((t) => (
+              <button
+                key={t.id}
+                className={typeFilter === t.id ? 'active' : ''}
+                onClick={() => setTypeFilter(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="period-bar">
+            {TYPE_LIST.filter((t) => PRESTAMO_TYPES.includes(t.id)).map((t) => (
               <button
                 key={t.id}
                 className={typeFilter === t.id ? 'active' : ''}
