@@ -149,12 +149,14 @@ input:disabled { opacity: .55; cursor: not-allowed; }
 .icon-btn.danger:active { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
 
 /* ---------- Type & method pickers ---------- */
-.type-picker { display: flex; flex-wrap: wrap; gap: 9px; }
+.type-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.type-picker.prestamo { grid-template-columns: repeat(2, 1fr); margin-top: 9px; }
 .type-chip {
-  flex: 1 1 calc(33.333% - 6px); min-width: 90px; padding: 12px; border-radius: 12px; cursor: pointer;
+  min-width: 0; padding: 12px 6px; border-radius: 12px; cursor: pointer;
   background: var(--bg3); border: 1.5px solid var(--border);
-  color: var(--text-dim); font-weight: 600; transition: .15s;
+  color: var(--text-dim); font-weight: 600; font-size: .82rem; transition: .15s;
   text-align: center; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .type-chip.active { background: var(--bg2); font-weight: 700; }
 
