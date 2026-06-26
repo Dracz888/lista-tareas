@@ -33,6 +33,40 @@ const SEED_METHODS = [
 
 export const findMethod = (methods, id) => methods.find((m) => m.id === id);
 
+// --- Migración: categorías "Préstamo +/−" antiguas ------------------------
+// Antes de existir los tipos dedicados prestamo_in/prestamo_out, algunos
+// usuarios crearon categorías llamadas "Préstamo +" / "Préstamo −" como
+// Ingreso/Egreso comunes. Esto las reasigna al tipo de préstamo correcto y
+// actualiza los registros existentes que las usaban.
+const LEGACY_PRESTAMO_NAME = /^pr[eé]stamo\b/i;
+
+export function migrateLegacyPrestamoCategories(categories, records) {
+  const idToNewType = {};
+  const newCategories = categories.map((c) => {
+    if ((c.type !== 'ingreso' && c.type !== 'egreso') || !LEGACY_PRESTAMO_NAME.test(c.name)) {
+      return c;
+    }
+    const isPlus = c.name.includes('+');
+    const isMinus = /[-−]/.test(c.name);
+    const newType =
+      (c.type === 'ingreso' && isPlus && 'prestamo_in') ||
+      (c.type === 'egreso' && isMinus && 'prestamo_out') ||
+      null;
+    if (!newType) return c;
+    idToNewType[c.id] = newType;
+    return { ...c, type: newType };
+  });
+
+  if (Object.keys(idToNewType).length === 0) {
+    return { categories, records, changed: false };
+  }
+
+  const newRecords = records.map((r) => (
+    idToNewType[r.categoryId] ? { ...r, type: idToNewType[r.categoryId] } : r
+  ));
+  return { categories: newCategories, records: newRecords, changed: true };
+}
+
 // --- Categorías de ejemplo (semilla inicial) ------------------------------
 const SEED_CATEGORIES = [
   { id: 'c-salario',   name: 'Salario',        type: 'ingreso' },
