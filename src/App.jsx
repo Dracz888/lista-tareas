@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { store } from './finance.js';
+import { store, migrateLegacyPrestamoCategories } from './finance.js';
 import { Icon } from './ui.jsx';
 import Configuracion from './Configuracion.jsx';
 import Registro from './Registro.jsx';
@@ -19,6 +19,15 @@ export default function App() {
   const [categories, setCategories] = useState(() => store.loadCategories());
   const [records, setRecords] = useState(() => store.loadRecords());
   const [methods, setMethods] = useState(() => store.loadMethods());
+
+  useEffect(() => {
+    const result = migrateLegacyPrestamoCategories(categories, records);
+    if (result.changed) {
+      setCategories(result.categories);
+      setRecords(result.records);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { store.saveCategories(categories); }, [categories]);
   useEffect(() => { store.saveRecords(records); }, [records]);

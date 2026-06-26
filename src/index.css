@@ -149,11 +149,12 @@ input:disabled { opacity: .55; cursor: not-allowed; }
 .icon-btn.danger:active { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
 
 /* ---------- Type & method pickers ---------- */
-.type-picker { display: flex; gap: 9px; }
+.type-picker { display: flex; flex-wrap: wrap; gap: 9px; }
 .type-chip {
-  flex: 1; padding: 12px; border-radius: 12px; cursor: pointer;
+  flex: 1 1 calc(33.333% - 6px); min-width: 90px; padding: 12px; border-radius: 12px; cursor: pointer;
   background: var(--bg3); border: 1.5px solid var(--border);
   color: var(--text-dim); font-weight: 600; transition: .15s;
+  text-align: center; white-space: nowrap;
 }
 .type-chip.active { background: var(--bg2); font-weight: 700; }
 
