@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { TYPE_LIST, uid } from './finance.js';
+import { TYPE_LIST, PRINCIPAL_TYPES, PRESTAMO_TYPES, uid } from './finance.js';
 import { exportJSON, exportXLSX, mergeBackup, readBackupFile } from './export.js';
 import { Icon } from './ui.jsx';
 
@@ -149,19 +149,7 @@ export default function Configuracion({
 
           <label className="field">
             <span>Tipo</span>
-            <div className="type-picker">
-              {TYPE_LIST.map((t) => (
-                <button
-                  type="button"
-                  key={t.id}
-                  className={`type-chip ${type === t.id ? 'active' : ''}`}
-                  style={type === t.id ? { borderColor: t.color, color: t.color } : undefined}
-                  onClick={() => setType(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+            <TypePicker value={type} onChange={setType} />
           </label>
 
           <button type="submit" className="btn-primary" disabled={!name.trim()}>
@@ -193,19 +181,10 @@ export default function Configuracion({
                           onChange={(e) => setCatDraft({ ...catDraft, name: e.target.value })}
                           maxLength={40}
                         />
-                        <div className="type-picker">
-                          {TYPE_LIST.map((tp) => (
-                            <button
-                              type="button"
-                              key={tp.id}
-                              className={`type-chip ${catDraft.type === tp.id ? 'active' : ''}`}
-                              style={catDraft.type === tp.id ? { borderColor: tp.color, color: tp.color } : undefined}
-                              onClick={() => setCatDraft({ ...catDraft, type: tp.id })}
-                            >
-                              {tp.label}
-                            </button>
-                          ))}
-                        </div>
+                        <TypePicker
+                          value={catDraft.type}
+                          onChange={(id) => setCatDraft({ ...catDraft, type: id })}
+                        />
                         <div className="cat-edit-actions">
                           <button type="button" className="btn-secondary" onClick={cancelEditCat}>
                             <Icon.x width={16} height={16} /> Cancelar
@@ -388,5 +367,30 @@ export default function Configuracion({
         )}
       </section>
     </div>
+  );
+}
+
+// Selector de tipo en dos filas: los tipos principales (Ingreso/Egreso/Gasto)
+// arriba y los de Préstamo (+/−) en su propia fila debajo, para que no se
+// salgan de la pantalla en móviles estrechos.
+function TypePicker({ value, onChange }) {
+  const principal = TYPE_LIST.filter((t) => PRINCIPAL_TYPES.includes(t.id));
+  const prestamo = TYPE_LIST.filter((t) => PRESTAMO_TYPES.includes(t.id));
+  const chip = (t) => (
+    <button
+      type="button"
+      key={t.id}
+      className={`type-chip ${value === t.id ? 'active' : ''}`}
+      style={value === t.id ? { borderColor: t.color, color: t.color } : undefined}
+      onClick={() => onChange(t.id)}
+    >
+      {t.label}
+    </button>
+  );
+  return (
+    <>
+      <div className="type-picker">{principal.map(chip)}</div>
+      <div className="type-picker prestamo">{prestamo.map(chip)}</div>
+    </>
   );
 }

@@ -39,7 +39,7 @@ export const findMethod = (methods, id) => methods.find((m) => m.id === id);
 // usando los tipos comunes Ingreso/Egreso/Gasto. Esto las reasigna al tipo de
 // préstamo correcto (para que dejen de sumarse al Resultado Neto) y actualiza
 // los registros existentes que las usaban.
-const LOAN_LIKE_NAME = /^(pr[eé]stamo|deudas?|debo|debe|fiado|mam[áa]|pap[áa])(?![a-záéíóúñ])/i;
+const LOAN_LIKE_NAME = /^(pr[eé]stamo|deudas?|debo|debe|fiado|cambios?|mam[áa]|pap[áa])(?![a-záéíóúñ])/i;
 
 export function migrateLegacyPrestamoCategories(categories, records) {
   const idToNewType = {};
@@ -47,16 +47,9 @@ export function migrateLegacyPrestamoCategories(categories, records) {
     if (!PRINCIPAL_TYPES.includes(c.type) || !LOAN_LIKE_NAME.test(c.name)) {
       return c;
     }
-    // Las categorías literalmente llamadas "Préstamo +/−" solo migran si el
-    // signo del nombre coincide con el tipo (evita reasignar casos contradictorios).
-    const isPrestamoLabel = /^pr[eé]stamo\b/i.test(c.name);
-    const hasPlus = c.name.includes('+');
-    const hasMinus = /[-−]/.test(c.name);
-    const newType =
-      (c.type === 'ingreso' && (!isPrestamoLabel || hasPlus) && 'prestamo_in') ||
-      ((c.type === 'egreso' || c.type === 'gasto') && (!isPrestamoLabel || hasMinus) && 'prestamo_out') ||
-      null;
-    if (!newType) return c;
+    // Se reasigna según la dirección del dinero: lo que entraba (ingreso) pasa a
+    // Préstamo +, lo que salía (egreso/gasto) pasa a Préstamo −.
+    const newType = c.type === 'ingreso' ? 'prestamo_in' : 'prestamo_out';
     idToNewType[c.id] = newType;
     return { ...c, type: newType };
   });
